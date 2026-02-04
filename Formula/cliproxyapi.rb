@@ -36,7 +36,7 @@ class Cliproxyapi < Formula
   end
 
   service do
-    run [opt_bin/"cliproxyapi"]
+    run [opt_bin/"cliproxyapi", "-config", etc/"cliproxyapi.conf"]
     keep_alive true
   end
 
