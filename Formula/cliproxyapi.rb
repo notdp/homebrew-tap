@@ -24,10 +24,36 @@ class Cliproxyapi < Formula
     elsif OS.linux? && Hardware::CPU.intel?
       bin.install "cliproxyapi-linux-amd64" => "cliproxyapi"
     end
+
+    # 创建默认配置文件
+    (etc/"cliproxyapi.conf").write default_config unless (etc/"cliproxyapi.conf").exist?
+  end
+
+  def default_config
+    <<~YAML
+      host: ""
+      port: 8317
+      remote-management:
+        allow-remote: false
+        secret-key: ""
+      auth-dir: "#{var}/cliproxyapi/auths"
+      api-keys:
+        - changeme
+      debug: false
+      logging-to-file: true
+      proxy-url: ""
+      request-retry: 3
+      # credential-master: "http://master-ip:8888"
+    YAML
+  end
+
+  def post_install
+    (var/"cliproxyapi/auths").mkpath
+    (var/"log").mkpath
   end
 
   service do
-    run [opt_bin/"cliproxyapi"]
+    run [opt_bin/"cliproxyapi", "-c", etc/"cliproxyapi.conf"]
     keep_alive true
     log_path var/"log/cliproxyapi.log"
     error_log_path var/"log/cliproxyapi.log"
@@ -36,19 +62,21 @@ class Cliproxyapi < Formula
 
   def caveats
     <<~EOS
-      配置文件位置: /opt/homebrew/etc/cliproxyapi.conf
+      配置文件: #{etc}/cliproxyapi.conf
+      Auth 目录: #{var}/cliproxyapi/auths
+      日志文件: #{var}/log/cliproxyapi.log
 
-      Credential-master 配置示例 (follower):
+      Credential-master 配置 (follower):
         credential-master: "http://master-ip:8888"
         remote-management:
           secret-key: "<与 master 相同的 hash>"
 
-      启动服务:
-        brew services start cliproxyapi
+      启动: brew services start cliproxyapi
+      停止: brew services stop cliproxyapi
     EOS
   end
 
   test do
-    system "#{bin}/cliproxyapi", "--version"
+    assert_match "CLIProxyAPI", shell_output("#{bin}/cliproxyapi --version 2>&1", 0)
   end
 end
