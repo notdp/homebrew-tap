@@ -24,59 +24,25 @@ class Cliproxyapi < Formula
     elsif OS.linux? && Hardware::CPU.intel?
       bin.install "cliproxyapi-linux-amd64" => "cliproxyapi"
     end
-
-    # 创建默认配置文件
-    (etc/"cliproxyapi.conf").write default_config unless (etc/"cliproxyapi.conf").exist?
-  end
-
-  def default_config
-    <<~YAML
-      host: ""
-      port: 8317
-      remote-management:
-        allow-remote: false
-        secret-key: ""
-      auth-dir: "#{var}/cliproxyapi/auths"
-      api-keys:
-        - changeme
-      debug: false
-      logging-to-file: true
-      proxy-url: ""
-      request-retry: 3
-      # credential-master: "http://master-ip:8888"
-    YAML
-  end
-
-  def post_install
-    (var/"cliproxyapi/auths").mkpath
-    (var/"log").mkpath
   end
 
   service do
     run [opt_bin/"cliproxyapi", "-c", etc/"cliproxyapi.conf"]
     keep_alive true
-    log_path var/"log/cliproxyapi.log"
-    error_log_path var/"log/cliproxyapi.log"
-    working_dir var/"cliproxyapi"
+    working_dir HOMEBREW_PREFIX
   end
 
   def caveats
     <<~EOS
-      配置文件: #{etc}/cliproxyapi.conf
-      Auth 目录: #{var}/cliproxyapi/auths
-      日志文件: #{var}/log/cliproxyapi.log
+      首次安装需要手动创建配置文件:
+        curl -o #{etc}/cliproxyapi.conf https://raw.githubusercontent.com/router-for-me/CLIProxyAPI/main/config.example.yaml
 
-      Credential-master 配置 (follower):
-        credential-master: "http://master-ip:8888"
-        remote-management:
-          secret-key: "<与 master 相同的 hash>"
-
-      启动: brew services start cliproxyapi
-      停止: brew services stop cliproxyapi
+      然后编辑配置文件，启动服务:
+        brew services start notdp/tap/cliproxyapi
     EOS
   end
 
   test do
-    assert_match "CLIProxyAPI", shell_output("#{bin}/cliproxyapi --version 2>&1", 0)
+    system "#{bin}/cliproxyapi", "--help"
   end
 end
