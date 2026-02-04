@@ -18,28 +18,26 @@ class Cliproxyapi < Formula
     end
   end
 
+  resource "config" do
+    url "https://github.com/notdp/CLIProxyAPI/releases/download/v6.7.20-credential-master/config.example.yaml"
+    sha256 "304ce36c229f080860e03aa8b1f40338806d84a0983ccc2019cc766de20d2ebb"
+  end
+
   def install
     if OS.mac? && Hardware::CPU.arm?
       bin.install "cliproxyapi-darwin-arm64" => "cliproxyapi"
     elsif OS.linux? && Hardware::CPU.intel?
       bin.install "cliproxyapi-linux-amd64" => "cliproxyapi"
     end
+
+    resource("config").stage do
+      etc.install "config.example.yaml" => "cliproxyapi.conf" unless (etc/"cliproxyapi.conf").exist?
+    end
   end
 
   service do
-    run [opt_bin/"cliproxyapi", "-c", etc/"cliproxyapi.conf"]
+    run [opt_bin/"cliproxyapi"]
     keep_alive true
-    working_dir HOMEBREW_PREFIX
-  end
-
-  def caveats
-    <<~EOS
-      首次安装需要手动创建配置文件:
-        curl -o #{etc}/cliproxyapi.conf https://raw.githubusercontent.com/router-for-me/CLIProxyAPI/main/config.example.yaml
-
-      然后编辑配置文件，启动服务:
-        brew services start notdp/tap/cliproxyapi
-    EOS
   end
 
   test do
